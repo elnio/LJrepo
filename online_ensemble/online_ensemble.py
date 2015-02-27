@@ -13,7 +13,7 @@ class OnlineEnsemble:
     def predict_results(self, x):
         results = {}
         for idx in self._estimators:
-            results[idx] = self._estimators[idx].predict(x)[0]
+            results[idx] = self._estimators[idx].predict(x)
         return results
 
     def predict_weighted_sum(self, x, weights):
