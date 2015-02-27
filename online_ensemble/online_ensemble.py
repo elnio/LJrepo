@@ -1,4 +1,5 @@
 import numpy as np
+from data_reader import DataReader
 from sklearn.ensemble.forest import RandomForestRegressor
 
 __all__ = ["OnlineEnsemble"]
@@ -6,39 +7,37 @@ __all__ = ["OnlineEnsemble"]
 
 class OnlineEnsemble:
     def __init__(self):
-        self._estimators = []
-
-    def first_build(self, n_estimators, x, y):
-        rf = RandomForestRegressor(n_estimators=n_estimators)
-        rf.fit(x, y)
-        for tree in rf.estimators_:
-            self._estimators.append(tree)
+        self._estimators = {}
+        self._cnt = 0
 
     def predict_results(self, x):
-        results = []
-        for estimator in self._estimators:
-            results.append(estimator.predict(x))
+        results = {}
+        for idx in self._estimators:
+            results[idx] = self._estimators[idx].predict(x)[0]
         return results
 
     def predict_weighted_sum(self, x, weights):
         results = self.predict_results(x)
-        return np.dot(results, weights)
+        sum_ = 0.0
+        for idx in results.keys():
+            if not (idx in self._estimators):
+                raise ValueError('estimator with idx {} does not exist!')
+            sum_ += weights[idx] * results[idx]
+        return sum_
+
+    def get_idx_list(self):
+        return self._estimators.keys()
 
     def delete(self, idx_list):
-        new_estimators = []
-        last = 0
         for idx in idx_list:
-            for i in range(last, idx):
-                new_estimators.append(self._estimators[i])
-            last = idx
-        self._estimators = new_estimators
+            del self._estimators[idx]
 
     def insert(self, estimators):
         for estimator in estimators:
-            self._estimators.append(estimator)
+            self._estimators[self._cnt] = estimator
+            self._cnt += 1
 
-    def insert(self, n_estimators, x, y):
+    def insert_with_rf(self, n_estimators, x, y):
         rf = RandomForestRegressor(n_estimators=n_estimators)
         rf.fit(x, y)
-        for tree in rf.estimators_:
-            self._estimators.append(tree)
+        self.insert(rf.estimators_)

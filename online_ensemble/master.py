@@ -15,28 +15,26 @@ dim = 50
 chunk_size = 1000
 
 # initialize the random forest
-x = np.ndarray(shape=(chunk_size, dim - 1))
-y = np.ndarray(shape=chunk_size)
+x = []
+y = []
 for i in range(chunk_size):
     data_point = reader.read_data_point()
-    x[i] = data_point['x']
-    y[i] = data_point['y']
+    x.append(data_point['x'])
+    y.append(data_point['y'])
 rf = OnlineEnsemble()
-rf.first_build(n_estimators=n_trees, x=x, y=y)
+rf.insert_with_rf(n_estimators=n_trees, x=x, y=y)
 last_x_chunk = x
 last_y_chunk = y
-last_idx = 0
 
 # start test
-w0 = np.transpose(np.ones(shape=n_trees) / n_trees)
-R0 = np.identity(n_trees)
-R0i = np.linalg.inv(R0)
+w0 = {}
+for idx in rf.get_idx_list():
+    w0[idx] = 1.0 / n_trees
 
-T = 0.8
 ss = 0.0001
 mse = 0.0
 
-n_test_data = 100;
+n_test_data = 100
 for i in range(chunk_size, chunk_size + n_test_data):
     data_point = reader.read_data_point()
     x = data_point['x']
@@ -44,30 +42,21 @@ for i in range(chunk_size, chunk_size + n_test_data):
     predict = rf.predict_weighted_sum(x, w0)
 
     # print the result
-    print 'i = {}, predict = {}, target = {}'.format(i, predict, y)
+    print 'i = {0}\tpredict = {1:.5f}\ttarget = {2:.5f}'.format(i, predict, y)
     mse += (predict - y) ** 2
 
     # update the last chunk
-    last_x_chunk[last_idx] = x
-    last_y_chunk[last_idx] = y
-    last_idx = (last_idx + 1) % chunk_size
+    last_x_chunk.append(x)
+    last_y_chunk.append(y)
+    del last_x_chunk[0]
+    del last_y_chunk[0]
 
     # simple version
-    F = rf.predict_results(x)
-    wF = w0 + F * ss * (y - predict)
-    w0 = wF
+    results = rf.predict_results(x)
+    for idx in results:
+        w0[idx] += results[idx] * ss * (y - predict)
 
-    # complex version
-    F = rf.predict_results(x)
-    u = F * math.sqrt(1 - T)
-    ut = np.transpose(u)
-    RF = R0 * T + np.outer(u, ut)
-    RFi = np.linalg.pinv(RF)
-    wF = w0 + ss * np.dot(RFi, F) * (y - np.dot(np.transpose(w0), F))
-    R0 = RF
-    R0i = RFi
-    w0 = wF
-
+    """
     # delete or inserting trees
     idx_list = []
     cnt = 0
@@ -76,3 +65,5 @@ for i in range(chunk_size, chunk_size + n_test_data):
         if w0[j] < threshold:
             idx_list.append(j)
             cnt += 1
+    """
+print 'mse = ', mse / n_test_data

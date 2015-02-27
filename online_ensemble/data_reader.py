@@ -17,8 +17,9 @@ class DataReader:
     def read_data_point(self):
         if self.idx >= self.num:
             raise ValueError('no more data point')
-        x = np.fromstring(string=self.data_in.readline(), sep=',')
-        y = np.array([float(self.target_in.readline())])
+        s = self.data_in.readline()
+        x = s.strip().split(',')
+        y = float(self.target_in.readline())
         self.idx += 1
         return {'x': x, 'y': y, 'idx': self.idx}
 
