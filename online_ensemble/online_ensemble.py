@@ -1,5 +1,3 @@
-import numpy as np
-from data_reader import DataReader
 from sklearn.ensemble.forest import RandomForestRegressor
 
 __all__ = ["OnlineEnsemble"]
@@ -23,7 +21,7 @@ class OnlineEnsemble:
             if not (idx in self._estimators):
                 raise ValueError('estimator with idx {} does not exist!')
             sum_ += weights[idx] * results[idx]
-        return sum_
+        return float(sum_)
 
     def get_idx_list(self):
         return self._estimators.keys()
