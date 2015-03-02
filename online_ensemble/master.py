@@ -13,6 +13,8 @@ def run_simple(rf, last_x_chunk, last_y_chunk, reader):
     ss = 0.0001
     mse = 0.0
     mse_vec = []
+    replace_flag = 1
+    normalization_flag = 1
 
     n_test_data = 20000
     for i in range(chunk_size, chunk_size + n_test_data):
@@ -37,28 +39,30 @@ def run_simple(rf, last_x_chunk, last_y_chunk, reader):
         for idx in results:
             w0[idx] += results[idx] * ss * (y - predict)
 
-        # replace trees
-        # delete old trees
-        idx_list = []
-        threshold = 1.0 / n_trees * 0.5
-        for idx in w0:
-            if w0[idx] < threshold:
-                idx_list.append(idx)
-        if len(idx_list) == 0:
-            continue
-        for idx in idx_list:
-            del w0[idx]
-        rf.delete(idx_list)
-        print 'replace {0} trees whose indices are {1}'.format(len(idx_list), idx_list)
-        # insert new trees
-        rf.insert_with_rf(len(idx_list), last_x_chunk, last_y_chunk)
-        for idx in rf.get_idx_list():
-            if not (idx in w0.keys()):
-                w0[idx] = 1.0 / n_trees
-        # normalization
-        sum_ = sum(w0.values())
-        for idx in w0:
-            w0[idx] /= sum_
+        if replace_flag == 1:
+            # replace trees
+            # delete old trees
+            idx_list = []
+            threshold = 1.0 / n_trees * 0.5
+            for idx in w0:
+                if w0[idx] < threshold:
+                    idx_list.append(idx)
+            if len(idx_list) == 0:
+                continue
+            for idx in idx_list:
+                del w0[idx]
+            rf.delete(idx_list)
+            print 'replace {0} trees whose indices are {1}'.format(len(idx_list), idx_list)
+            # insert new trees
+            rf.insert_with_rf(len(idx_list), last_x_chunk, last_y_chunk)
+            for idx in rf.get_idx_list():
+                if not (idx in w0.keys()):
+                    w0[idx] = 1.0 / n_trees
+        if normalization_flag == 1:
+            # normalization
+            sum_ = sum(w0.values())
+            for idx in w0:
+                w0[idx] /= sum_
     print 'mse = ', mse / n_test_data
     plt.plot(mse_vec)
     plt.ylabel('mse')
@@ -93,6 +97,8 @@ def run_complex(rf, last_x_chunk, last_y_chunk, reader):
     R0i = np.linalg.inv(R0)
     T = 0.9
     ss = 0.0001
+    replace_flag = 1
+    normalization_flag = 1
     mse = 0.0
     mse_vec = []
 
@@ -127,33 +133,35 @@ def run_complex(rf, last_x_chunk, last_y_chunk, reader):
         R0 = RF
         R0i = RFi
 
-        # replace trees
-        # delete old trees
-        idx_list = []
-        threshold = 1.0 / n_trees * 0.9
-        for idx in wd:
-            if w0[wd[idx]] < threshold:
-                w0[wd[idx]] = 1.0 / n_trees
-                idx_list.append(idx)
-                rev_wd[wd[idx]] = -1
-        if len(idx_list) == 0:
-            continue
-        for idx in idx_list:
-            del wd[idx]
-        rf.delete(idx_list)
-        print 'replace {0} trees whose indices are {1}'.format(len(idx_list), idx_list)
-        # insert new trees
-        rf.insert_with_rf(len(idx_list), last_x_chunk, last_y_chunk)
-        # reassign row numbers to new trees
-        for idx in rf.get_idx_list():
-            if not (idx in wd.keys()):
-                for j in range(n_trees):
-                    if rev_wd[j] == -1:
-                        wd[idx] = j
-                        rev_wd[j] = idx
-                        break
-        # normalization
-        w0 = w0 / w0.sum()
+        if replace_flag == 1:
+            # replace trees
+            # delete old trees
+            idx_list = []
+            threshold = 1.0 / n_trees * 0.9
+            for idx in wd:
+                if w0[wd[idx]] < threshold:
+                    w0[wd[idx]] = 1.0 / n_trees
+                    idx_list.append(idx)
+                    rev_wd[wd[idx]] = -1
+            if len(idx_list) == 0:
+                continue
+            for idx in idx_list:
+                del wd[idx]
+            rf.delete(idx_list)
+            print 'replace {0} trees whose indices are {1}'.format(len(idx_list), idx_list)
+            # insert new trees
+            rf.insert_with_rf(len(idx_list), last_x_chunk, last_y_chunk)
+            # reassign row numbers to new trees
+            for idx in rf.get_idx_list():
+                if not (idx in wd.keys()):
+                    for j in range(n_trees):
+                        if rev_wd[j] == -1:
+                            wd[idx] = j
+                            rev_wd[j] = idx
+                            break
+        if normalization_flag == 1:
+            # normalization
+            w0 = w0 / w0.sum()
     print 'mse = ', mse / n_test_data
     plt.plot(mse_vec)
     plt.ylabel('mse')
