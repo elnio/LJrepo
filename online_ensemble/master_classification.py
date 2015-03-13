@@ -10,8 +10,8 @@ def run_classification():
     # main function
     # open the file
     directory = "/Users/dengjingyu/nyu/Research/data/"
-    data_file_name = "predictors_no_noise.csv"
-    target_file_name = "response_no_noise.csv"
+    data_file_name = "predictors1.csv"
+    target_file_name = "classes1.csv"
     reader = DataReader(num=1000000, data_path=directory + data_file_name, target_path=directory + target_file_name)
 
     # set parameters
@@ -26,7 +26,7 @@ def run_classification():
     for i in range(chunk_size):
         data_point = reader.read_data_point()
         x.append(data_point['x'])
-        y.append(data_point['y'])
+        y.append(int(data_point['y']))
     rf = OnlineEnsemble()
     rf.insert_with_random_forest_regressor(n_estimators=n_trees, x=x, y=y)
     last_x_chunk = x
@@ -39,7 +39,7 @@ def run_classification():
 
     # set parameters
     ss = 0.0001
-    errors = 0
+    errors = 0.0
     error_rate = 0.0
     error_rate_vec = []
     replace_flag = 1
@@ -54,7 +54,7 @@ def run_classification():
 
         # print the result
         if predict != y:
-            errors += 1
+            errors += 1.0
         error_rate = errors / (i + 1 - chunk_size)
         error_rate_vec.append(error_rate)
         print 'i = {0}\tpredict = {1}\ttarget = {2}\terror rate = {3:.5f}'.format(i, predict, y, error_rate)
@@ -65,13 +65,14 @@ def run_classification():
         del last_x_chunk[0]
         del last_y_chunk[0]
 
+        """
         # update weight in the case of classification
         results = rf.predict_results(x)
         sum_ = rf.predict_weighted_sum(x, w0)
         t = math.tanh(sum_)
         for idx in results:
             w0[idx] += results[idx] * ss * (y - t) * (1 - t**2)
-
+        """
         if replace_flag == 1:
             # replace trees
             # delete old trees
@@ -101,3 +102,4 @@ def run_classification():
     plt.ylabel('error_rate')
     plt.show()
 
+run_classification()

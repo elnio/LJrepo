@@ -1,6 +1,7 @@
 import numpy as np
 import matplotlib.pyplot as plt
 import math
+import time
 from online_ensemble import OnlineEnsemble
 from data_reader import DataReader
 
@@ -54,7 +55,7 @@ def run_simple(rf, last_x_chunk, last_y_chunk, reader):
             rf.delete(idx_list)
             print 'replace {0} trees whose indices are {1}'.format(len(idx_list), idx_list)
             # insert new trees
-            rf.insert_with_rf(len(idx_list), last_x_chunk, last_y_chunk)
+            rf.insert_with_random_forest_regressor(len(idx_list), last_x_chunk, last_y_chunk)
             for idx in rf.get_idx_list():
                 if not (idx in w0.keys()):
                     w0[idx] = 1.0 / n_trees
@@ -150,7 +151,7 @@ def run_complex(rf, last_x_chunk, last_y_chunk, reader):
             rf.delete(idx_list)
             print 'replace {0} trees whose indices are {1}'.format(len(idx_list), idx_list)
             # insert new trees
-            rf.insert_with_rf(len(idx_list), last_x_chunk, last_y_chunk)
+            rf.insert_with_random_forest_regressor(len(idx_list), last_x_chunk, last_y_chunk)
             # reassign row numbers to new trees
             for idx in rf.get_idx_list():
                 if not (idx in wd.keys()):
@@ -178,9 +179,11 @@ reader = DataReader(num=1000000, data_path=directory + data_file_name, target_pa
 # set parameters
 n_trees = 100
 dim = 50
-chunk_size = 1000
+chunk_size = 500
 
 # initialize the random forest
+start = time.time()
+
 x = []
 y = []
 for i in range(chunk_size):
@@ -188,10 +191,14 @@ for i in range(chunk_size):
     x.append(data_point['x'])
     y.append(data_point['y'])
 rf = OnlineEnsemble()
-rf.insert_with_rf(n_estimators=n_trees, x=x, y=y)
+rf.insert_with_random_forest_regressor(n_estimators=n_trees, x=x, y=y)
 last_x_chunk = x
 last_y_chunk = y
 
 # start test
-#run_simple(rf, last_x_chunk, last_y_chunk, reader)
-run_complex(rf, last_x_chunk, last_y_chunk, reader)
+run_simple(rf, last_x_chunk, last_y_chunk, reader)
+#run_complex(rf, last_x_chunk, last_y_chunk, reader)
+
+
+end = time.time()
+print end - start
