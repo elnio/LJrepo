@@ -26,7 +26,10 @@ def run_classification():
     for i in range(chunk_size):
         data_point = reader.read_data_point()
         x.append(data_point['x'])
-        y.append(int(data_point['y']))
+        yy = int(data_point['y'])
+        if yy == 0:
+            yy = -1
+        y.append(yy)
     rf = OnlineEnsemble()
     rf.insert_with_random_forest_regressor(n_estimators=n_trees, x=x, y=y)
     last_x_chunk = x
@@ -50,6 +53,8 @@ def run_classification():
         data_point = reader.read_data_point()
         x = data_point['x']
         y = data_point['y']
+        if y == 0:
+            y = -1
         predict = rf.predict_weighted_classification_result(x, w0)
 
         # print the result
