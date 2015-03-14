@@ -1,17 +1,17 @@
 from data_reader import DataReader
 from sklearn import cross_validation
-from sklearn.ensemble.forest import RandomForestClassifier
+from sklearn.tree import DecisionTreeClassifier
 
 directory = "/Users/dengjingyu/nyu/Research/data/"
 data_file_name = "predictors1.csv"
 target_file_name = "classes1.csv"
 reader = DataReader(num=1000000, data_path=directory + data_file_name, target_path=directory + target_file_name)
 
-chunk_size = 500
+chunk_size = 5000
 n_test_chunks = 100
-n_classifiers = 32  # number of random forests
-n_estimators = 100  # number of trees in a random forest
-test_size = 0.3     # test_size in cross validation
+n_classifiers = 10  # number of random forests
+test_size = 0.2     # test_size in cross validation
+min_samples_leaf = 1
 
 ensemble = []
 weights = []
@@ -46,20 +46,21 @@ for i in range(n_test_chunks):
 
     # train a new classifier
     x_train, x_test, y_train, y_test = cross_validation.train_test_split(x, y, test_size=test_size)
-    rf = RandomForestClassifier(n_estimators=n_estimators)
-    rf.fit(x_train, y_train)
-    ensemble.append(rf)
+    dt = DecisionTreeClassifier(min_samples_leaf=min_samples_leaf)
+    dt.fit(x_train, y_train)
+    ensemble.append(dt)
+    print dt.score(x_test, y_test)
+    break
     MSE = 0.0
+    proba_list = dt.predict_proba(x_test)
     for k in range(len(x_test)):
-        xk = x[k]
-        yk = y[k]
-        cnt = 0.0
-        for l in range(n_estimators):
-            predict = rf.estimators_[l].predict(xk)
-            if predict == yk:
-                cnt += 1.0
-        MSE += (1 - cnt / n_estimators) ** 2
+        xk = x_test[k]
+        yk = y_test[k]
+        proba = proba_list[k][int(yk)]
+        print 'proba', proba
+        MSE += (1 - proba) ** 2
     MSE /= len(x_test)
+    print 'MSE', MSE
     weights.append(0.25 - MSE)
 
 
@@ -67,15 +68,12 @@ for i in range(n_test_chunks):
     for j in range(len(ensemble) - 1):
         MSEj = 0.0
         Cj = ensemble[j]
+        proba_list = Cj.predict_proba(x)
         for k in range(chunk_size):
             xk = x[k]
             yk = y[k]
-            cnt = 0.0
-            for l in range(n_estimators):
-                predict = Cj.estimators_[l].predict(xk)
-                if predict == yk:
-                    cnt += 1.0
-            MSEj += (1 - cnt / n_estimators) ** 2
+            proba = proba_list[k][int(yk)]
+            MSEj += (1 - proba) ** 2
         MSEj /= chunk_size
         weights[j] = 0.25 - MSEj
 
