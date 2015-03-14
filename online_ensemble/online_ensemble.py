@@ -40,7 +40,9 @@ class OnlineEnsemble:
         for idx in results.keys():
             if not (idx in self._estimators):
                 raise ValueError('estimator with idx {} does not exist!')
-            single_result = results[idx]
+            single_result = int(results[idx])
+            if not (single_result in vote_dict.keys()):
+                vote_dict[single_result] = 0
             vote_dict[single_result] += weights[idx]
             if vote_dict[single_result] > max_vote:
                 max_vote = vote_dict[single_result]

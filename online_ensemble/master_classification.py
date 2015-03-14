@@ -106,5 +106,6 @@ def run_classification():
     plt.plot(error_rate_vec)
     plt.ylabel('error_rate')
     plt.show()
+    reader.close()
 
 run_classification()

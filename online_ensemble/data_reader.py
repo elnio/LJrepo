@@ -23,6 +23,15 @@ class DataReader:
         self.idx += 1
         return {'x': x, 'y': y, 'idx': self.idx}
 
+    def read_data_chunk(self, chunk_size):
+        x = []
+        y = []
+        for i in range(chunk_size):
+            data_point = self.read_data_point()
+            x.append(data_point['x'])
+            y.append(data_point['y'])
+        return x, y
+
     def close(self):
         self.data_in.close()
         self.target_in.close()
