@@ -6,7 +6,7 @@ from online_ensemble import OnlineEnsemble
 from data_reader import DataReader
 
 
-def run_simple(rf, last_x_chunk, last_y_chunk, reader):
+def run_simple(category, rf, last_x_chunk, last_y_chunk, reader):
     w0 = {}
     for idx in rf.get_idx_list():
         w0[idx] = 1.0 / n_trees
@@ -48,14 +48,15 @@ def run_simple(rf, last_x_chunk, last_y_chunk, reader):
             for idx in w0:
                 if w0[idx] < threshold:
                     idx_list.append(idx)
-            if len(idx_list) == 0:
+            # no trees to replace
+            if len(idx_list) == 0: 
                 continue
             for idx in idx_list:
                 del w0[idx]
             rf.delete(idx_list)
             print 'replace {0} trees whose indices are {1}'.format(len(idx_list), idx_list)
             # insert new trees
-            rf.insert_with_random_forest_regressor(len(idx_list), last_x_chunk, last_y_chunk)
+            rf.insert(category,len(idx_list), last_x_chunk, last_y_chunk)
             for idx in rf.get_idx_list():
                 if not (idx in w0.keys()):
                     w0[idx] = 1.0 / n_trees
@@ -171,7 +172,7 @@ def run_complex(rf, last_x_chunk, last_y_chunk, reader):
 
 # main function
 # open the file
-directory = "/Users/dengjingyu/nyu/Research/data/"
+directory = "syntheticData/"
 data_file_name = "predictors_no_noise.csv"
 target_file_name = "response_no_noise.csv"
 reader = DataReader(num=1000000, data_path=directory + data_file_name, target_path=directory + target_file_name)
@@ -180,6 +181,7 @@ reader = DataReader(num=1000000, data_path=directory + data_file_name, target_pa
 n_trees = 100
 dim = 50
 chunk_size = 500
+category = "svm_regressor"
 
 # initialize the random forest
 start = time.time()
@@ -191,12 +193,12 @@ for i in range(chunk_size):
     x.append(data_point['x'])
     y.append(data_point['y'])
 rf = OnlineEnsemble()
-rf.insert_with_random_forest_regressor(n_estimators=n_trees, x=x, y=y)
+rf.insert(n_estimators=n_trees, x=x, y=y, category=category)
 last_x_chunk = x
 last_y_chunk = y
 
 # start test
-run_simple(rf, last_x_chunk, last_y_chunk, reader)
+run_simple(category, rf, last_x_chunk, last_y_chunk, reader)
 #run_complex(rf, last_x_chunk, last_y_chunk, reader)
 
 
