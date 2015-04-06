@@ -10,17 +10,15 @@ def flatten(l):
     return ret
 
 
-def run_classification(data_file_name="d10_k0.8_t0.1.in", target_file_name="d10_k0.8_t0.1.out", n_test_chunks=100):
+def run_classification(data_file_name="d10_k0.8_t0.1.in", target_file_name="d10_k0.8_t0.1.out", n_test_chunks=100, chunk_size=1000, n_classifiers=8):
     directory = "data/"
     reader = DataReader(num=1000000, data_path=directory + data_file_name, target_path=directory + target_file_name)
-
-    chunk_size = 1000
-    n_classifiers = 8  # number of classifiers
 
     errors = 0.0
     cnt = 0
     nc = 0
-    error_rate_vec = []
+    error_rate = 0.0
+    error_rate_vec = [0.0]
 
     ri = 0
     x_chunks = []
@@ -65,4 +63,4 @@ def run_classification(data_file_name="d10_k0.8_t0.1.in", target_file_name="d10_
     plt.show()
     """
     reader.close()
-    return error_rate_vec
+    return error_rate, error_rate_vec
