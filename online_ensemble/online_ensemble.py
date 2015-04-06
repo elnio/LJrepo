@@ -3,6 +3,7 @@ from sklearn.ensemble.forest import RandomForestClassifier
 from sklearn.ensemble import BaggingRegressor
 from sklearn import svm, grid_search
 import math
+import random
 import scipy.stats as stats
 __all__ = ["OnlineEnsemble"]
 
@@ -99,3 +100,8 @@ class OnlineEnsemble:
             self.insert_with_random_forest_regressor(n_estimators, x, y)
         if category == 'random_forest_classifier':
             self.insert_with_random_forest_classifier(n_estimators, x, y)
+        if category == 'combination':
+            if random.random() < 0.25:
+                self.insert_with_SVM_regressor(n_estimators, x, y)
+            else:
+                self.insert_with_random_forest_regressor(n_estimators, x, y)
