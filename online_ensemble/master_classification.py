@@ -13,16 +13,15 @@ def weighted_sum(results, weights):
     return float(sum_)
 
 
-def run_classification(data_file_name="d10_k0.8_t0.1.in", target_file_name="d10_k0.8_t0.1.out", n_test_chunks=100):
+def run_classification(data_file_name="d10_k0.8_t0.1.in", target_file_name="d10_k0.8_t0.1.out", n_test_chunks=100, chunk_size=1000, n_trees=8, category='random_forest_regressor'):
     # main function
     # open the file
     directory = "data/"
     reader = DataReader(num=1000000, data_path=directory + data_file_name, target_path=directory + target_file_name)
 
     # set parameters
-    n_trees = 8
     dim = 10
-    chunk_size = 1000
+
 
     # initialize the random forest
     start = time.time()
@@ -36,7 +35,7 @@ def run_classification(data_file_name="d10_k0.8_t0.1.in", target_file_name="d10_
             yy = -1
         y.append(yy)
     rf = OnlineEnsemble()
-    rf.insert_with_random_forest_regressor(n_estimators=n_trees, x=x, y=y)
+    rf.insert(n_estimators=n_trees, x=x, y=y, category=category)
     last_x_chunk = x
     last_y_chunk = y
 
@@ -50,7 +49,7 @@ def run_classification(data_file_name="d10_k0.8_t0.1.in", target_file_name="d10_
     errors = 0.0
     cnt = 0
     error_rate = 0.0
-    error_rate_vec = []
+    error_rate_vec = [0.0]
     replace_flag = 1
     normalization_flag = 1
 
@@ -88,7 +87,7 @@ def run_classification(data_file_name="d10_k0.8_t0.1.in", target_file_name="d10_
         for idx in results:
             w0[idx] += results[idx] * ss * (y - t) * (1 - t**2)
 
-        if normalization_flag == 1:
+        if normalization_flag == 1 and n_trees > 1:
             # normalization
             sum_ = sum(w0.values())
             for idx in w0:
@@ -100,7 +99,11 @@ def run_classification(data_file_name="d10_k0.8_t0.1.in", target_file_name="d10_
             # replace trees
             # delete old trees
             idx_list = []
-            threshold = 1.0 / n_trees * 0.5
+            #threshold = 1.0 / n_trees * 0.5
+            if n_trees > 1:
+                threshold = 1.0 / n_trees * (0.3 / (n_trees * 2 - 3) + 0.4)
+            else:
+                threshold = 0.5
             for idx in w0:
                 if w0[idx] < threshold:
                     idx_list.append(idx)
@@ -109,14 +112,14 @@ def run_classification(data_file_name="d10_k0.8_t0.1.in", target_file_name="d10_
             for idx in idx_list:
                 del w0[idx]
             rf.delete(idx_list)
-            #print 'replace {0} trees whose indices are {1}'.format(len(idx_list), idx_list)
+            print 'replace {0} trees whose indices are {1}'.format(len(idx_list), idx_list)
             # insert new trees
-            rf.insert_with_random_forest_regressor(len(idx_list), last_x_chunk, last_y_chunk)
+            rf.insert(len(idx_list), last_x_chunk, last_y_chunk, category=category)
             for idx in rf.get_idx_list():
                 if not (idx in w0.keys()):
                     w0[idx] = 1.0 / n_trees
 
-        if normalization_flag == 1:
+        if normalization_flag == 1 and n_trees > 1:
             # normalization
             sum_ = sum(w0.values())
             for idx in w0:
@@ -129,4 +132,4 @@ def run_classification(data_file_name="d10_k0.8_t0.1.in", target_file_name="d10_
     plt.show()
     """
     reader.close()
-    return error_rate_vec
+    return error_rate, error_rate_vec
