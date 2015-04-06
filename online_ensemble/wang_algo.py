@@ -4,12 +4,10 @@ from sklearn.tree import DecisionTreeClassifier
 import matplotlib.pyplot as plt
 
 
-def run_classification(data_file_name="d10_k0.8_t0.1.in", target_file_name="d10_k0.8_t0.1.out", n_test_chunks=100):
+def run_classification(data_file_name="d10_k0.8_t0.1.in", target_file_name="d10_k0.8_t0.1.out", n_test_chunks=100, chunk_size=1000, n_classifiers=8):
     directory = "data/"
     reader = DataReader(num=1000000, data_path=directory + data_file_name, target_path=directory + target_file_name)
 
-    chunk_size = 1000
-    n_classifiers = 8  # number of classifiers
     test_size = 0.4     # test_size in cross validation
     MSEr = 0.25
 
@@ -18,7 +16,8 @@ def run_classification(data_file_name="d10_k0.8_t0.1.in", target_file_name="d10_
     errors = 0.0
     cnt = 0
     nc = 0
-    error_rate_vec = []
+    error_rate = 0.0
+    error_rate_vec = [0.0]
 
 
     for i in range(n_test_chunks):
@@ -30,7 +29,7 @@ def run_classification(data_file_name="d10_k0.8_t0.1.in", target_file_name="d10_
             xk = x[k]
             yk = y[k]
             vote_dict = {}
-            max_vote = 0.0
+            max_vote = -1000
             if len(ensemble) == 0:
                 continue
             for j in range(len(ensemble)):
@@ -94,7 +93,7 @@ def run_classification(data_file_name="d10_k0.8_t0.1.in", target_file_name="d10_
                 if weights[j] > max_weight:
                     max_weight = weights[j]
                     best = j
-            if best < 0:
+            if best < 0 and len(new_ensemble) != 0:
                 break
             new_ensemble.append(ensemble[best])
             new_weights.append(weights[best])
@@ -110,4 +109,4 @@ def run_classification(data_file_name="d10_k0.8_t0.1.in", target_file_name="d10_
     plt.show()
     """
     reader.close()
-    return error_rate_vec
+    return error_rate, error_rate_vec
