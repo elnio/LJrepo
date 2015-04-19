@@ -202,7 +202,7 @@ def get_results_vec(results_dict, wd):
 
 # main function
 # open the file
-directory = "/home/anil/Desktop/jingyuCode/"
+directory = "./data/"
 data_file_name = "challengePredictors.csv"
 target_file_name = "challengeResponse.csv"
 #data_file_name = "predictors_no_noise.csv"
