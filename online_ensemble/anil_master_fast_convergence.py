@@ -153,7 +153,7 @@ def run_simple(rf, last_x_chunk, last_y_chunk, reader):
             add_trees = 0
             woods[i] = 0            
             # insert new trees
-            rf.insert_with_random_forest_regressor(len(idx_list)+add_trees, last_x_chunk, last_y_chunk)
+            rf.insert_with_random_forest_regressor(len(idx_list)+add_trees, last_x_chunk, last_y_chunk, n_jobs=n_jobs)
             for idx in rf.get_idx_list():
                 if not (idx in w0.keys()):
                     w0[idx] = 1.0 / N_trees
@@ -213,7 +213,8 @@ target_file_name = "challengeResponse.csv"
 n_trees = 1000
 dim = 50
 chunk_size = 200
-file_length = 10000  
+file_length = 10000
+n_jobs = 1
 
 reader = DataReader(num=file_length, data_path=directory + data_file_name, target_path=directory + target_file_name)
 
@@ -227,7 +228,7 @@ for i in range(chunk_size):
     x.append(data_point['x'])
     y.append(data_point['y'])
 rf = OnlineEnsemble()
-rf.insert_with_random_forest_regressor(n_estimators=n_trees, x=x, y=y)
+rf.insert_with_random_forest_regressor(n_estimators=n_trees, x=x, y=y, n_jobs=n_jobs)
 last_x_chunk = x
 last_y_chunk = y
 
