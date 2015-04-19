@@ -64,7 +64,7 @@ class OnlineEnsemble:
             self._estimators[self._cnt] = estimator
             self._cnt += 1
             
-    def insert_with_SVM_regressor(self, n_estimators, x, y):
+    def insert_with_SVM_regressor(self, n_estimators, x, y, n_jobs):
             
         # defining the parameter grids to optimize on.
         # we are performing randomized grid search with statistical distributions for probabilistic searching.
@@ -75,33 +75,33 @@ class OnlineEnsemble:
         # put some grid search for 'poly' kernel and maybe for 'sigmoid'        
         svr = svm.SVR()
         # 3-fold cross validation, 
-        optimalSvr = grid_search.GridSearchCV(svr, param_grid)
+        optimalSvr = grid_search.GridSearchCV(svr, param_grid, n_jobs=n_jobs)
         # this takes a lot of time to compute every time. Need to change that in the future and save the best parameters, but then 
         # there is a risk of the best parameters changing when the distribution changes as well.
         # also if we set n_jobs != 1, we can exploit parallelization 
-        bootstrapingSvr = BaggingRegressor(base_estimator = optimalSvr, n_estimators=n_estimators, oob_score = True)
+        bootstrapingSvr = BaggingRegressor(base_estimator = optimalSvr, n_estimators=n_estimators, oob_score = True, n_jobs=n_jobs)
         bootstrapingSvr.fit(x, y)
         self.insert_with_estimators(bootstrapingSvr.estimators_)
         
-    def insert_with_random_forest_regressor(self, n_estimators, x, y):
-        rf = RandomForestRegressor(n_estimators=n_estimators)
+    def insert_with_random_forest_regressor(self, n_estimators, x, y, n_jobs):
+        rf = RandomForestRegressor(n_estimators=n_estimators, n_jobs=n_jobs)
         rf.fit(x, y)
         self.insert_with_estimators(rf.estimators_)
 
-    def insert_with_random_forest_classifier(self, n_estimators, x, y):
-        rf = RandomForestClassifier(n_estimators=n_estimators)
+    def insert_with_random_forest_classifier(self, n_estimators, x, y, n_jobs):
+        rf = RandomForestClassifier(n_estimators=n_estimators, n_jobs=n_jobs)
         rf.fit(x, y)
         self.insert_with_estimators(rf.estimators_)
 
-    def insert(self, n_estimators, x, y, category):
+    def insert(self, n_estimators, x, y, category, n_jobs=1):
         if category == 'svm_regressor':
-            self.insert_with_SVM_regressor(n_estimators, x, y)
+            self.insert_with_SVM_regressor(n_estimators, x, y, n_jobs)
         if category == 'random_forest_regressor':
-            self.insert_with_random_forest_regressor(n_estimators, x, y)
+            self.insert_with_random_forest_regressor(n_estimators, x, y, n_jobs)
         if category == 'random_forest_classifier':
-            self.insert_with_random_forest_classifier(n_estimators, x, y)
+            self.insert_with_random_forest_classifier(n_estimators, x, y, n_jobs)
         if category == 'combination':
             if random.random() < 0.25:
-                self.insert_with_SVM_regressor(n_estimators, x, y)
+                self.insert_with_SVM_regressor(n_estimators, x, y, n_jobs)
             else:
-                self.insert_with_random_forest_regressor(n_estimators, x, y)
+                self.insert_with_random_forest_regressor(n_estimators, x, y, n_jobs)
