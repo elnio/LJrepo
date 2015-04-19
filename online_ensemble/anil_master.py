@@ -41,7 +41,7 @@ def run_simple(rf, last_x_chunk, last_y_chunk, reader):
     f11 = -40
     ss = SS/N_trees
     #n_test_data = file_length-chunk_size
-    n_test_data = 9000
+    n_test_data = 2000
     for i in range(chunk_size, chunk_size + n_test_data):
   
         data_point = reader.read_data_point()
@@ -132,7 +132,7 @@ def run_simple(rf, last_x_chunk, last_y_chunk, reader):
             N_trees += add_trees # New size of the forest            
             add_trees = 0            
             # insert new trees
-            rf.insert_with_random_forest_regressor(len(idx_list)+add_trees, last_x_chunk, last_y_chunk, n_jobs=n_jobs)
+            rf.insert(len(idx_list)+add_trees, last_x_chunk, last_y_chunk, category=category)
             for idx in rf.get_idx_list():
                 if not (idx in w0.keys()):
                     w0[idx] = 1.0 / N_trees
@@ -190,6 +190,7 @@ dim = 50
 chunk_size = 200
 file_length = 10000
 n_jobs = 1
+category = 'random_forest_regressor'
 
 reader = DataReader(num=file_length, data_path=directory + data_file_name, target_path=directory + target_file_name)
 
@@ -202,8 +203,8 @@ for i in range(chunk_size):
     data_point = reader.read_data_point()
     x.append(data_point['x'])
     y.append(data_point['y'])
-rf = OnlineEnsemble()
-rf.insert_with_random_forest_regressor(n_estimators=n_trees, x=x, y=y, n_jobs=n_jobs)
+rf = OnlineEnsemble(n_jobs=n_jobs)
+rf.insert(n_estimators=n_trees, x=x, y=y, category=category)
 last_x_chunk = x
 last_y_chunk = y
 
