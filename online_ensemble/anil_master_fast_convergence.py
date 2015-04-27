@@ -7,7 +7,7 @@ from data_reader import DataReader
 
 
 
-def run_simple(rf, last_x_chunk, last_y_chunk, reader):
+def run_simple(rf, last_x_chunk, last_y_chunk, reader, n_trees, chunk_size, category):
     xx = {}    
     w0 = {}
     w1 = {}
@@ -27,7 +27,7 @@ def run_simple(rf, last_x_chunk, last_y_chunk, reader):
     # Set the parameters
     ws = 6 # Window size to check the MSE in this window increases or decreases     
     wsr = 0.0003 # Stopping rule for the stochastic gradient descent
-    SS = 0.1 # Scaled step-size ( 0.001 works nice! )
+    SS = 0.001 # Scaled step-size ( 0.001 works nice! )
     lambda_E0 = 0.01 # Forgetting factor for the cross correlation
     
     # Dull parameters (no need to change)
@@ -49,7 +49,7 @@ def run_simple(rf, last_x_chunk, last_y_chunk, reader):
     f11 = -40
     ss = SS/N_trees
     #n_test_data = file_length-chunk_size
-    n_test_data = 9000
+    n_test_data = 100
     for i in range(chunk_size, chunk_size + n_test_data):
   
         data_point = reader.read_data_point()
@@ -165,7 +165,9 @@ def run_simple(rf, last_x_chunk, last_y_chunk, reader):
         rep_vec.append(n_rep)
        
     print 'mse = ', mse / n_test_data
+    return mse_vec, rep_vec, mse
 
+    """
     fig = plt.figure()
     ax1 = fig.add_subplot(111)
     ax1.plot(mse_vec, 'r')
@@ -173,16 +175,6 @@ def run_simple(rf, last_x_chunk, last_y_chunk, reader):
     ax2 = ax1.twinx()
     ax2.plot(rep_vec, 'b')
     ax2.set_ylabel('num of replacements')
-    plt.show()
-
-    """
-    plt.figure(1)    
-    plt.plot(mse_vec)
-    plt.ylabel('mse')
-    plt.show()
-    plt.figure(2)
-    plt.ylabel('mse raw')
-    plt.plot(rep_vec)
     plt.show()
     """
 
@@ -200,42 +192,45 @@ def get_results_vec(results_dict, wd):
         vec[wd[idx]] = results_dict[idx]
     return vec
 
-# main function
-# open the file
-directory = "./data/"
-data_file_name = "challengePredictors.csv"
-target_file_name = "challengeResponse.csv"
-#data_file_name = "predictors_no_noise.csv"
-#target_file_name = "response_no_noise.csv"
+
+def test(n_jobs, n_trees, category, chunk_size):
+    # main function
+    # open the file
+    directory = "./data/"
+    data_file_name = "challengePredictors.csv"
+    target_file_name = "challengeResponse.csv"
+    #data_file_name = "predictors_no_noise.csv"
+    #target_file_name = "response_no_noise.csv"
 
 
-# set parameters
-n_trees = 1000
-dim = 50
-chunk_size = 200
-file_length = 10000
-n_jobs = 1
-category = 'random_forest_regressor'
+    # set parameters
+    #n_trees = 1000
+    dim = 50
+    #chunk_size = 200
+    file_length = 10000
+    #n_jobs = 1
+    #category = 'random_forest_regressor'
 
-reader = DataReader(num=file_length, data_path=directory + data_file_name, target_path=directory + target_file_name)
+    reader = DataReader(num=file_length, data_path=directory + data_file_name, target_path=directory + target_file_name)
 
-# initialize the random forest
-start = time.time()
+    # initialize the random forest
+    start = time.time()
 
-x = []
-y = []
-for i in range(chunk_size):
-    data_point = reader.read_data_point()
-    x.append(data_point['x'])
-    y.append(data_point['y'])
-rf = OnlineEnsemble(n_jobs=n_jobs)
-rf.insert(n_estimators=n_trees, x=x, y=y, category=category)
-last_x_chunk = x
-last_y_chunk = y
+    x = []
+    y = []
+    for i in range(chunk_size):
+        data_point = reader.read_data_point()
+        x.append(data_point['x'])
+        y.append(data_point['y'])
+    rf = OnlineEnsemble(n_jobs=n_jobs)
+    rf.insert(n_estimators=n_trees, x=x, y=y, category=category)
+    last_x_chunk = x
+    last_y_chunk = y
 
-# start test
-run_simple(rf, last_x_chunk, last_y_chunk, reader)
+    # start test
+    mse_vec, rep_vec, mse = run_simple(rf, last_x_chunk, last_y_chunk, reader, n_trees, chunk_size, category)
 
-
-end = time.time()
-print end - start
+    end = time.time()
+    reader.close()
+    exe_time = end - start
+    return mse_vec, rep_vec, mse, exe_time
